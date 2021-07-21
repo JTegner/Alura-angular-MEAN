@@ -18,7 +18,8 @@ require('../app/routes/grupo')(app);
 */
 
 consign({ cwd: 'app'})
-.include('api')
+.include('models')
+.then('api')
 .then('routes')
 .into(app);
 
