@@ -1,65 +1,74 @@
+var mongoose = require('mongoose');
+
 var api = {};
 
-var CONTADOR = 2;
-
-var fotos = [
-    {_id: 1, titulo: 'Leão', url:'http://www.fundosanimais.com/Minis/leoes.jpg' },
-    {_id: 2, titulo: 'Leão 2', url:'http://www.fundosanimais.com/Minis/leoes.jpg' }
-];
-
+var model = mongoose.model('Foto');
 
 api.lista = function(req,res) {
-    res.json(fotos);
+
+    /*
+    model.find(function(error, fotos) {
+        if(error) {
+            res.status(500).json(error);
+        }
+        res.json(fotos);
+    });
+    abaixo reescrita no formato promise
+    */
+
+    model
+        .find({}) //traz tudo
+        .then(function(fotos) {
+            res.json(fotos);
+        }, function(error) {
+            console.log(error);
+            res.status(500).json(error);
+        });
 };
 
 api.buscaPorId = function(req, res) {
-    console.log('id: ' + req.params.id);
-    var foto = fotos.find(function (foto) {
-        return foto._id == req.params.id;
-    }) ;
-
-    res.json(foto);
-
+    model
+        .findById(req.params.id)
+        .then(function(foto) {
+            if(!foto) throw Error('Foto não encontrada');
+            res.json(foto);
+        }, function(error) {
+            console.log(error);
+            res.status(404).json(error);
+        });
 };
 
 api.removePorId = function(req, res) {
-    console.log('id: ' + req.params.id);
-    /* a variavel fotos sera filtrada, nela ficarao somente as fotos diferentes do id
-    ou seja a foto informada no id nao fara mais parte da lista fotos
-    */
-    fotos = fotos.filter(function (foto) {
-        return foto._id != req.params.id;
-    }) ;
-
-    res.sendStatus(204); // 204 = ok para o navegador sem devolver informacao de volta
-    /*
-    ou
-    res.status(204).end();
-    */
-
+    model
+        .remove({_id: req.params.id})
+        .then(function() {
+            res.sendStatus(204);
+        }, function(error) {
+            console.log(error);
+            res.status(500).json(error);
+        });
 };
 
 api.adiciona = function(req, res) {
-    //console.log(req.body);
-    var foto = req.body;
-    foto._id = ++CONTADOR;
-    fotos.push(foto);
-
-    res.json(foto);
+    model
+        .create(req.body)
+        .then(function() {
+            res.json(foto);
+        }, function(error) {
+            console.log(error);
+            res.status(500).json(error);
+        });
 };
 
 api.atualiza = function(req, res) {
-    var foto = req.body;
-    var fotoId = req.params.id;
-    
-    //dado o ID eu quero saber em qual posicao ela se ecnontra no array
-    var indice = fotos.findIndex(function(foto) {
-        return foto._id == fotoId;
-    });
-
-    fotos[indice] = foto;
-
-    res.sendStatus(200); //resposta para o nevegador, ele fica esperando
+    model
+        .findByIdAndUpdate(req.params.id, req.body)
+        .then(function() {
+            res.json(foto);
+        }, function(error) {
+            console.log(error);
+            res.status(500).json(error);
+        });
 };
 
 module.exports = api;
